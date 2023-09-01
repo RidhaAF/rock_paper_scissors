@@ -1,5 +1,6 @@
 import 'dart:math';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:rock_paper_scissors/utilities/constants.dart';
 
@@ -25,8 +26,9 @@ class _HomePageState extends State<HomePage> {
     paper: rock,
     scissors: paper,
   };
+  String winner = '';
 
-  String determineWinner(String userChoice, String botChoice) {
+  String _determineWinner(String userChoice, String botChoice) {
     if (userChoice == botChoice) {
       return 'draw';
     } else if (winConditions[userChoice] == botChoice) {
@@ -38,11 +40,17 @@ class _HomePageState extends State<HomePage> {
 
   void _scoreCounter(String newUserChoice) {
     final newBotChoice = choices[Random().nextInt(choices.length)];
-    final winner = determineWinner(userChoice, newBotChoice);
 
     setState(() {
       userChoice = newUserChoice;
       botChoice = newBotChoice;
+      winner = _determineWinner(userChoice, botChoice);
+
+      if (kDebugMode) {
+        print('userChoice: $userChoice');
+        print('botChoice: $botChoice');
+        print('winner: $winner');
+      }
 
       if (winner == 'draw') {
         draw++;
@@ -54,9 +62,56 @@ class _HomePageState extends State<HomePage> {
     });
   }
 
+  void _restartGame() {
+    setState(() {
+      userChoice = '';
+      botChoice = '';
+      winner = '';
+    });
+  }
+
+  Color? _getBackgroundColor() {
+    switch (winner) {
+      case 'draw':
+        return mutedColor;
+      case 'won':
+        return greenColor;
+      case 'lost':
+        return redColor;
+      default:
+        return null;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(
+        title: Text(
+          'Rock Paper Scissors',
+          style: TextStyle(
+            fontSize: 24,
+            fontWeight: bold,
+          ),
+          textScaleFactor: 1.0,
+        ),
+        actions: [
+          winner != ''
+              ? IconButton(
+                  onPressed: () {
+                    _restartGame();
+                  },
+                  tooltip: 'Restart',
+                  icon: Icon(
+                    Icons.refresh,
+                    color: blackColor,
+                  ),
+                )
+              : Container(),
+        ],
+        backgroundColor: _getBackgroundColor(),
+      ),
+      backgroundColor: _getBackgroundColor(),
       body: ListView(
         children: [
           _scoreBoard(),
@@ -110,27 +165,62 @@ class _HomePageState extends State<HomePage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Text(
-              '🤖',
-              style: TextStyle(
-                fontSize: 64,
-              ),
-              textScaleFactor: 1.0,
-            ),
+            _getBotChoice(),
             SizedBox(height: defaultMargin),
-            Text(
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: semiBold,
-              ),
-              'Rock, Paper, Scissors?',
-              textScaleFactor: 1.0,
-            ),
+            _getWinnerText(),
             SizedBox(height: defaultMargin),
-            _gameButton(),
+            _getUserChoice(),
           ],
         ),
       ),
+    );
+  }
+
+  Widget _getBotChoice() {
+    return Text(
+      botChoice == '' ? '🤖' : botChoice,
+      style: const TextStyle(
+        fontSize: 64,
+      ),
+      textScaleFactor: 1.0,
+    );
+  }
+
+  Widget _getWinnerText() {
+    switch (winner) {
+      case 'draw':
+        return _winnerText('Draw 🤝🏻');
+      case 'won':
+        return _winnerText('You Won 🥳');
+      case 'lost':
+        return _winnerText('You Lost 😭');
+      default:
+        return _winnerText('VS');
+    }
+  }
+
+  Widget _winnerText(String text) {
+    return Text(
+      text,
+      style: TextStyle(
+        fontSize: 24,
+        fontWeight: semiBold,
+      ),
+      textScaleFactor: 1.0,
+    );
+  }
+
+  _getUserChoice() {
+    return userChoice == '' ? _gameButton() : _userChoice();
+  }
+
+  Widget _userChoice() {
+    return Text(
+      userChoice,
+      style: const TextStyle(
+        fontSize: 64,
+      ),
+      textScaleFactor: 1.0,
     );
   }
 
